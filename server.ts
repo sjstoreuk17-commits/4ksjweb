@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+import compression from "compression";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,15 +13,11 @@ const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes cache duration
 
 const app = express();
+app.use(compression());
+app.use(express.json());
 
-async function startServer() {
-  // Use PORT from environment (Hugging Face uses 7860, AI Studio uses 3000)
-  const PORT = Number(process.env.PORT) || 7860;
-
-  app.use(express.json());
-
-  // Proxy Xtream API to avoid CORS
-  app.get("/api/proxy", async (req, res) => {
+// Proxy Xtream API to avoid CORS
+app.get("/api/proxy", async (req, res) => {
     const { url, ...params } = req.query;
     if (!url) return res.status(400).json({ error: "URL is required" });
 
@@ -39,8 +36,8 @@ async function startServer() {
       const targetUrl = new URL(url as string);
       const response = await axios.get(url as string, {
         params,
-        timeout: 60000, // Increased timeout to 60s
-        maxContentLength: 100 * 1024 * 1024, // 100MB limit
+        timeout: 15000, // Reduced to 15s for Vercel Hobby limits
+        maxContentLength: 100 * 1024 * 1024, // 100MB incoming limit
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': '*/*',
@@ -118,6 +115,10 @@ async function startServer() {
       res.status(500).send("Streaming failed");
     }
   });
+
+async function startServer() {
+  // Use PORT from environment (Hugging Face uses 7860, AI Studio uses 3000)
+  const PORT = Number(process.env.PORT) || 7860;
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
