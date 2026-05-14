@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'sjstoreuk17@gmail.com'
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Helpers
+    function isValidSettings(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             (data.get('psl_live_url_urdu', '') is string) &&
+             (data.get('psl_live_url_english', '') is string);
+    }
+
+    function isValidFreeMovie(data) {
+      return data.keys().hasAll(['name', 'poster_url', 'play_url', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.poster_url is string && data.poster_url.size() > 0 &&
+             data.play_url is string && data.play_url.size() > 0;
+    }
+
+    function isValidFreeSeries(data) {
+      return data.keys().hasAll(['name', 'poster_url', 'play_url', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.poster_url is string && data.poster_url.size() > 0 &&
+             data.play_url is string && data.play_url.size() > 0;
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only manageable via Firebase Console or special script
+    }
+
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidSettings(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Free Movies Collection
+    match /free_movies/{movieId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidFreeMovie(incoming());
+      allow update: if isAdmin() && isValidFreeMovie(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Free Series Collection
+    match /free_series/{seriesId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidFreeSeries(incoming());
+      allow update: if isAdmin() && isValidFreeSeries(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}

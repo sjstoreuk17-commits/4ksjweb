@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "settings": {
+      "title": "Settings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "psl_live_url_urdu": {
+          "type": "string",
+          "description": "The current PSL Live Urdu stream URL"
+        },
+        "psl_live_url_english": {
+          "type": "string",
+          "description": "The current PSL Live English stream URL"
+        },
+        "ipl_live_url": {
+          "type": "string",
+          "description": "The current IPL Live stream URL"
+        },
+        "psl_enabled": { "type": "boolean" },
+        "ipl_enabled": { "type": "boolean" },
+        "free_movies_enabled": { "type": "boolean" },
+        "free_series_enabled": { "type": "boolean" },
+        "psl_title": { "type": "string" },
+        "ipl_title": { "type": "string" },
+        "free_movies_title": { "type": "string" },
+        "free_series_title": { "type": "string" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["psl_live_url_urdu", "psl_live_url_english"]
+    },
+    "free_movies": {
+      "title": "Free Movies",
+      "description": "Custom movies added for free access",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "poster_url": { "type": "string" },
+        "play_url": { "type": "string" },
+        "download_url": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "poster_url", "play_url"]
+    },
+    "free_series": {
+      "title": "Free Series",
+      "description": "Custom series added for free access",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "poster_url": { "type": "string" },
+        "play_url": { "type": "string" },
+        "download_url": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "poster_url", "play_url"]
+    },
+    "admins": {
+      "title": "Admins",
+      "description": "System administrators",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": "admins",
+      "description": "Authorized administrators"
+    },
+    "/settings/psl": {
+      "schema": "settings",
+      "description": "The document containing the PSL Live stream URL"
+    },
+    "/settings/ipl": {
+      "schema": "settings",
+      "description": "The document containing the IPL Live stream URL"
+    },
+    "/settings/app": {
+      "schema": "settings",
+      "description": "Global application feature toggles and titles"
+    },
+    "/free_movies/{movieId}": {
+      "schema": "free_movies",
+      "description": "Collection of free movies"
+    },
+    "/free_series/{seriesId}": {
+      "schema": "free_series",
+      "description": "Collection of free series"
+    }
+  }
+}
