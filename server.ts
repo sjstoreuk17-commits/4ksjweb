@@ -55,7 +55,7 @@ app.get("/api/proxy", async (req, res) => {
       const targetUrl = new URL(url as string);
       const response = await axios.get(url as string, {
         params,
-        timeout: 9000, // Reduced to 9s (Vercel Hobby limit is 10s)
+        timeout: 30000, // Increased to 30s for Hugging Face
         maxContentLength: 100 * 1024 * 1024, // 100MB incoming limit
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -168,9 +168,7 @@ async function startServer() {
   });
 }
 
-// Start server only if not on Vercel
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-  startServer().catch(console.error);
-}
+// Start server
+startServer().catch(console.error);
 
 export default app;
