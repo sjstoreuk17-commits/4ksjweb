@@ -23,7 +23,7 @@ export default function PromotionPoster() {
         },
         config: {
           imageConfig: {
-            aspectRatio: "9:16", // Perfect for WhatsApp/Instagram status
+            aspectRatio: "9:16", // Perfect for social media status
           }
         }
       });
@@ -49,7 +49,7 @@ export default function PromotionPoster() {
         <h2 className="text-2xl font-bold text-gradient flex items-center justify-center gap-2">
           <Sparkles className="text-cyan-400" /> 4K SJ Promotion Generator
         </h2>
-        <p className="text-white/40 text-sm">Create a professional poster for your WhatsApp status or social media.</p>
+        <p className="text-white/40 text-sm">Create a professional poster for your social media status.</p>
       </div>
 
       {posterUrl ? (
