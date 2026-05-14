@@ -612,7 +612,9 @@ export default function App() {
         }
       } catch (err: any) {
         console.error("Critical failure during initialization", err);
-        setError(err.message || "Failed to connect to IPTV server.");
+        const errorMessage = err.response?.data?.error || err.message || "Failed to connect to IPTV server.";
+        const hint = err.response?.data?.hint ? `\nHint: ${err.response.data.hint}` : "";
+        setError(`${errorMessage}${hint}`);
         setIntroProgress(100);
       } finally {
         setLoadingHome(false);

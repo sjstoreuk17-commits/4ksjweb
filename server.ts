@@ -16,6 +16,27 @@ const app = express();
 app.use(compression());
 app.use(express.json());
 
+// Function to strip unnecessary fields from IPTV data to keep response under 4.5MB Vercel limit
+function stripIPTVData(data: any) {
+  if (!Array.isArray(data)) return data;
+  
+  // Fields we actually use in the UI
+  const relevantFields = [
+    'name', 'stream_id', 'series_id', 'category_id', 'category_name',
+    'stream_icon', 'cover', 'plot', 'rating', 'director', 'genre',
+    'releaseDate', 'container_extension', 'num', 'title', 'id',
+    'last_modified', 'rating_5front', 'added'
+  ];
+
+  return data.map((item: any) => {
+    const newItem: any = {};
+    relevantFields.forEach(field => {
+      if (item[field] !== undefined) newItem[field] = item[field];
+    });
+    return newItem;
+  });
+}
+
 // Proxy Xtream API to avoid CORS
 app.get("/api/proxy", async (req, res) => {
     const { url, ...params } = req.query;
@@ -27,16 +48,14 @@ app.get("/api/proxy", async (req, res) => {
     // Check cache
     const cached = cache.get(cacheKey);
     if (cached && cached.expiry > Date.now()) {
-      console.log(`Serving from cache: ${fullUrl}`);
       return res.json(cached.data);
     }
 
-    console.log(`Proxying request to: ${url}`);
     try {
       const targetUrl = new URL(url as string);
       const response = await axios.get(url as string, {
         params,
-        timeout: 15000, // Reduced to 15s for Vercel Hobby limits
+        timeout: 9000, // Reduced to 9s (Vercel Hobby limit is 10s)
         maxContentLength: 100 * 1024 * 1024, // 100MB incoming limit
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -45,26 +64,30 @@ app.get("/api/proxy", async (req, res) => {
         }
       });
       
+      // Optimize data for Vercel (Strip fields)
+      const optimizedData = stripIPTVData(response.data);
+
       // Store in cache if successful
       if (response.status === 200) {
         cache.set(cacheKey, {
-          data: response.data,
+          data: optimizedData,
           expiry: Date.now() + CACHE_TTL
         });
       }
 
-      console.log(`Successfully fetched data from: ${url} (Size: ${JSON.stringify(response.data).length} bytes)`);
-      res.json(response.data);
+      res.json(optimizedData);
     } catch (error: any) {
-      // If we got a 429 and have stale cache, serve it anyway as fallback
       if (error.response?.status === 429 && cached) {
-        console.warn(`Got 429, serving stale cache for: ${fullUrl}`);
         return res.json(cached.data);
       }
 
       console.error(`Proxy error for ${url}:`, error.message);
       const status = error.response?.status || 500;
-      const data = error.response?.data || { error: "Failed to fetch from IPTV server", details: error.message };
+      const data = error.response?.data || { 
+        error: "Failed to fetch from IPTV server", 
+        details: error.message,
+        hint: "IPTV server might be slow or blocking Vercel. Try a smaller category." 
+      };
       res.status(status).json(data);
     }
   });
