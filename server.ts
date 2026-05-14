@@ -11,8 +11,9 @@ const __dirname = path.dirname(__filename);
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes cache duration
 
+const app = express();
+
 async function startServer() {
-  const app = express();
   // Use PORT from environment (Hugging Face uses 7860, AI Studio uses 3000)
   const PORT = Number(process.env.PORT) || 7860;
 
@@ -143,4 +144,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Start server only if not on Vercel
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  startServer().catch(console.error);
+}
+
+export default app;
